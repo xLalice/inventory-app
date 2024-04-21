@@ -1,7 +1,22 @@
 doctype html
-html
+html(lang='en')
   head
-    title= title
+    title Grocery Inventory App
     link(rel='stylesheet', href='/stylesheets/style.css')
   body
-    block content
+    nav
+      ul
+        li 
+          a(href='/') Home
+        li
+          a(href='/categories') Categories
+        li
+          a(href='/items') Items
+        li(class="m-left") 
+          a(href='/categories/create') Create new category
+        li 
+          a(href='/items/create') Create new item
+    main
+      block content
+        h1 Main Content Area
+        p Welcome to the Grocery Inventory App!

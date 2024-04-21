@@ -1,0 +1,52 @@
+extends layout 
+
+
+block content
+  div.form-group
+    h1 Create New Item
+    form(action='/items/create', method='POST', enctype="multipart/form-data")
+      label(for='name') Name:
+      input(type='text', id='name', name='name', required)
+
+      label(for='description') Description:
+      textarea(id='description', name='description', required)
+
+      label(for='category') Category:
+      select(id='category', name='category', required)
+        option(value='', selected disabled) -- Select a category --
+        each category in categories
+          if category._id===selectedCategory
+              option(value=category._id selected)= category.name
+          else
+              option(value=category._id)= category.name
+
+      label(for='price') Price:
+      input(type='number', id='price', name='price', min='0', step='0.01', required)
+
+      label(for='numberInStock') Number in Stock:
+      input(type='number', id='numberInStock', name='numberInStock', min='0', required)
+
+      label(for='brand') Brand:
+      input(type='text', id='brand', name='brand')
+
+      label(for='weight') Weight:
+      input(type='text', id='weight', name='weight')
+
+      label(for='expirationDate') Expiration Date:
+      input(type='date', id='expirationDate', name='expirationDate')
+
+      label(for='isFeatured') Is Featured:
+      input(type='checkbox', id='isFeatured', name='isFeatured')
+
+      label(for='tags') Tags:
+      input(type='text', id='tags', name='tags', placeholder='Enter tags separated by commas')
+
+      label(for="image") Image: 
+      input(type="file" id="image" name="image")
+
+      button(type='submit') Create
+
+      if errors
+          ul
+              for error in errors
+                  li!= error.msg

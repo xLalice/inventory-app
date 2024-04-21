@@ -1,5 +1,7 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+  div(class="home")
+    h1= title
+    p.stats <strong>Categories:</strong> #{numCategories}
+    p.stats <strong>Items:</strong> #{numItems}

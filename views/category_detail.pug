@@ -1,0 +1,25 @@
+extends layout
+
+block content 
+  div.flex
+    h1= category.name
+    div
+      button.delete-btn 
+        a(href=category.url+"/delete") Delete category 
+      button.update-btn
+        a(href=category.url+"/update") Update category
+
+  // List items belonging to the category
+  if items_under_category.length > 0
+    h2 Items in this Category
+    div.container
+      each item in items_under_category
+        div.item
+          h3= item.name
+          p Description: #{item.description}
+          p Price: $#{item.price}
+          p Number in Stock: #{item.numberInStock}
+          button 
+            a(href=`/item/${item._id}`) View Details
+  else
+    p No items found in this category.

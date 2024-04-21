@@ -1,0 +1,28 @@
+extends layout
+
+block content
+    h1 Confirm Category Deletion
+
+    div
+        p Are you sure you want to delete the category: #{category.name}?
+        p Description: #{category.description}
+        p URL: #{category.url}
+
+    if allItemsUnderCategory.length > 0
+        h2 #[strong Delete the following items before attempting to delete this category.]
+        ul
+            each item in allItemsUnderCategory
+                li
+                    strong= item.name
+                    p #{item.description}
+    else
+        p No items found in this category.
+
+    form(action=`/category/${category._id}/delete`, method='POST')
+        button.btn.btn-danger(type='submit') Yes, Delete
+        a.btn.btn-secondary(href='/categories') Cancel
+
+    if errors
+        ul
+            for error in errors
+                li!= error.msg

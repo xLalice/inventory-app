@@ -1,0 +1,9 @@
+extends layout
+
+block content  
+  h1 Delete Item Confirmation
+  p Are you sure you want to delete this item?
+
+  form(action=`/item/${itemId}/delete`, method='POST')
+    button(type='submit') Delete
+    a(href='/items') Cancel

@@ -8,10 +8,13 @@ const CategorySchema = new Schema({
         required: true,
         unique: true
     },
-    url: {
-        type: String,
-        required: true
+    imageSrc: {
+        type: String
     }
+});
+
+CategorySchema.virtual("url").get(function () {
+    return "/category/" + this._id;
 });
 
 module.exports = mongoose.model("Category", CategorySchema);

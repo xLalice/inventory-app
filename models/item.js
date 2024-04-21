@@ -24,7 +24,6 @@ const ItemSchema = new Schema({
         type: Number,
         required: true
     },
-    url: String,
     brand: String,
     weight: String,
     expirationDate: Date,
@@ -34,5 +33,9 @@ const ItemSchema = new Schema({
     },
     tags: [String]
 })
+
+ItemSchema.virtual("url").get(function () {
+    return "/item/" + this._id;
+});
 
 module.exports = mongoose.model("Item", ItemSchema);

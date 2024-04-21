@@ -1,0 +1,11 @@
+extends layout 
+
+block content
+    div.container
+        each item in items
+            div.item
+                h2= item.name
+                p.description= item.description
+                p.itemCategory= item.category.name
+                p.price= item.price
+                a(href=`/item/${item._id}`) View Details

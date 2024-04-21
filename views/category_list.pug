@@ -1,0 +1,9 @@
+extends layout 
+
+block content
+    div.container
+        each category in categories
+            div.category
+                img(src=`/images/${category.name.charAt(0).toLowerCase() + category.name.slice(1)}.jpg`)
+                h2= category.name
+                a(href=`/category/${category._id}`) View Details

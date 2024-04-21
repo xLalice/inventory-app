@@ -1,0 +1,17 @@
+extends layout
+
+block content
+  div.item-details
+    h1= item.name
+    p #{item.description}
+    p= item.category.name 
+    p= `Price: ₱${item.price}` 
+    p= `Stock: ${item.numberInStock}`
+    p= `Brand: ${item.brand}`
+    p= `Weight: ${item.weight}`
+    p= `Expiration Date: ${item.expirationDate}`
+    p= `Tags: ${item.tags[0]}, ${item.tags[1]}`
+    button.delete-btn
+      a(href=item.url+"/delete") Delete item 
+    button.update-btn
+      a(href=item.url+"/update") Update item
