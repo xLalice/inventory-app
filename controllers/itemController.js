@@ -1,221 +1,250 @@
-const Item = require('../models/item');
-const Category = require('../models/category');
 const asyncHandler = require('express-async-handler');
 const { body, validationResult } = require('express-validator');
+const pool = require("../db/pool")
 
 exports.index = asyncHandler(async (req, res, next) => {
-  const [numCategories, numItems] = await Promise.all([
-    Category.countDocuments({}).exec(),
-    Item.countDocuments({}).exec(),
+  const [numCategoriesResult, numItemsResult] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM categories'),
+      pool.query('SELECT COUNT(*) FROM items')
   ]);
 
-  res.render('index', {title: "Fresh & Convenient: Your Online Grocery Destination!", numCategories, numItems });
+  const numCategories = parseInt(numCategoriesResult.rows[0].count);
+  const numItems = parseInt(numItemsResult.rows[0].count);
+
+  res.render('index', {
+      title: "Fresh & Convenient: Your Online Grocery Destination!",
+      numCategories,
+      numItems
+  });
 });
+
 
 exports.item_list = asyncHandler(async (req, res) => {
-  const items = await Item.find({}).populate("category").exec();
-  res.render("item_list", {items});
-});
+    const result = await pool.query(`
+      SELECT 
+        items.id AS id,
+        items.name AS name,
+        items.description,
+        items.category_id,
+        items.price,
+        items.number_in_stock,
+        items.brand,
+        items.weight,
+        items.expiration_date,
+        items.is_featured,
+        items.tags,
+        categories.name AS category_name
+      FROM items
+      JOIN categories ON categories.id = items.category_id
+    `);
+  
+    console.log(result.rows);
+    res.render('item_list', { items: result.rows });
+  });
+  
+
 
 exports.item_detail = asyncHandler(async (req, res) => {
-  const item = await Item.findById(req.params.id);
-  res.render("item_detail", {item});
+    const itemId = req.params.id;
+    console.log(itemId)
+    const itemResult = await pool.query('SELECT * FROM items WHERE id = $1', [itemId]);
+    const item = itemResult.rows[0];
+    res.render('item_detail', { item, itemId });
 });
+
 
 exports.item_create_get = asyncHandler(async (req, res) => {
-
-  const categories = await Category.find({});
-  res.render("item_create", {title: "Create item", categories});
+  const categoriesResult = await pool.query('SELECT * FROM categories');
+  res.render('item_create', { title: 'Create Item', categories: categoriesResult.rows });
 });
 
+
 exports.item_create_post = [
-  (req, res, next) => {
-    // Convert 'isFeatured' checkbox value
-    req.body.isFeatured = req.body.isFeatured ? true : false;
-    next();
-  },
-  // Validate and sanitize input fields using express-validator
+    (req, res, next) => {
+        console.log('Received form data:', req.body);
+        req.body.isFeatured = req.body.isFeatured ? true : false;
+        next();
+      },
+  // Validate and sanitize input fields
   body('name')
-    .trim()
-    .isLength({ min: 3 })
-    .withMessage('Name must be at least 3 characters long')
-    .escape(),
+      .trim()
+      .isLength({ min: 3 })
+      .withMessage('Name must be at least 3 characters long')
+      .escape(),
 
   body('description')
-    .trim()
-    .isLength({ min: 10 })
-    .withMessage('Description must be at least 10 characters long')
-    .escape(),
+      .trim()
+      .isLength({ min: 10 })
+      .withMessage('Description must be at least 10 characters long')
+      .escape(),
 
-    body('category')
-      .isMongoId()
+  body('category')
+      .isNumeric()
       .withMessage('Invalid category ID'),
 
   body('price')
-    .isFloat({ min: 0 })
-    .withMessage('Price must be a positive number'),
+      .isFloat({ min: 0 })
+      .withMessage('Price must be a positive number'),
 
   body('numberInStock')
-    .isInt({ min: 0 })
-    .withMessage('Number in stock must be a non-negative integer'),
+      .isInt({ min: 0 })
+      .withMessage('Number in stock must be a non-negative integer'),
 
   body('brand')
-    .optional()
-    .trim()
-    .escape(),
+      .optional()
+      .trim()
+      .escape(),
 
   body('weight')
-    .optional()
-    .trim()
-    .escape(),
+      .optional()
+      .trim()
+      .escape(),
 
   body('expirationDate')
-    .optional()
-    .isISO8601()
-    .toDate(), // Convert to Date object
+      .optional()
+      .isISO8601()
+      .toDate(),
 
   body('isFeatured')
-    .optional(),
+      .optional(),
 
   body('tags')
-    .optional(),
+      .optional(),
 
-  // Route handler function
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        // Fetch categories again in case of error
-        const categories = await Category.find();
-        // Render the form again with error messages
-        res.render('item_create', {
-            title: 'Create Item',
-            categories,
-            item: req.body, // Include submitted data to refill the form
-            errors: errors.array()
-        });
-    } else {
-        // Handling tags conversion to an array if they come as a single string or undefined
-        if (typeof req.body.tags === 'string') {
-            req.body.tags = req.body.tags.split(',').map(tag => tag.trim());
-        } else if (typeof req.body.tags === 'undefined') {
-            req.body.tags = [];
-        }
+      const errors = validationResult(req);
 
-        // If no errors, proceed to save the new item
-        const item = new Item({
-            name: req.body.name,
-            description: req.body.description,
-            category: req.body.category,
-            price: req.body.price,
-            numberInStock: req.body.numberInStock,
-            brand: req.body.brand,
-            weight: req.body.weight,
-            expirationDate: req.body.expirationDate,
-            isFeatured: req.body.isFeatured,
-            tags: req.body.tags
-        });
+      if (!errors.isEmpty()) {
+          const categoriesResult = await pool.query('SELECT * FROM categories');
+          res.render('item_create', {
+              title: 'Create Item',
+              categories: categoriesResult.rows,
+              item: req.body,
+              errors: errors.array()
+          });
+      } else {
+          if (typeof req.body.tags === 'string') {
+              req.body.tags = req.body.tags.split(',').map(tag => tag.trim());
+          } else if (typeof req.body.tags === 'undefined') {
+              req.body.tags = [];
+          }
 
-        const savedItem = await item.save();
-        res.redirect(savedItem.url); // Ensure your Item model's virtual 'url' property is correctly defined
-    }
+          const result = await pool.query(
+              `INSERT INTO items (name, description, category_id, price, number_in_stock, brand, weight, expiration_date, is_featured, tags)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+              [req.body.name, req.body.description, req.body.category, req.body.price, req.body.numberInStock, req.body.brand, req.body.weight, req.body.expirationDate, req.body.isFeatured, req.body.tags]
+          );
+          const newItemId = result.rows[0].id;
+          res.redirect(`/item/${newItemId}`);
+      }
   })
 ];
 
+
 exports.item_delete_get = (req, res, next) => {
-    res.render('item_delete', {itemId: req.params.id});
-}
+  res.render('item_delete', { itemId: req.params.id });
+};
+
 
 exports.item_delete_post = asyncHandler(async (req, res) => {
-    const item = await Item.findByIdAndDelete(req.params.id);
-    res.redirect('/items');
+  const itemId = req.params.id;
+  await pool.query('DELETE FROM items WHERE id = $1', [itemId]);
+  res.redirect('/items');
 });
+
 
 exports.item_update_get = asyncHandler(async (req, res) => {
-    const item = await Item.findById(req.params.id);
-    if (item === null){
-      const err = new Error("Category not Found");
+  const itemId = req.params.id;
+  const itemResult = await pool.query('SELECT * FROM items WHERE id = $1', [itemId]);
+  const item = itemResult.rows[0];
+  
+  if (!item) {
+      const err = new Error("Item not Found");
       err.status = 404;
       return next(err);
-    }
+  }
 
-    const categories = await Category.find({});
-    res.render('item_create', {title: "Update item", categories})
+  const categoriesResult = await pool.query('SELECT * FROM categories');
+  res.render('item_create', { title: 'Update Item', categories: categoriesResult.rows, item });
 });
+
 
 exports.item_update_post = [
   (req, res, next) => {
-    // Convert 'isFeatured' checkbox value
-    req.body.isFeatured = req.body.isFeatured ? true : false;
-    next();
+      req.body.isFeatured = req.body.isFeatured ? true : false;
+      next();
   },
-  // Validate and sanitize input fields using express-validator
+  // Validate and sanitize input fields
   body('name')
-    .trim()
-    .isLength({ min: 3 })
-    .withMessage('Name must be at least 3 characters long')
-    .escape(),
+      .trim()
+      .isLength({ min: 3 })
+      .withMessage('Name must be at least 3 characters long')
+      .escape(),
 
   body('description')
-    .trim()
-    .isLength({ min: 10 })
-    .withMessage('Description must be at least 10 characters long')
-    .escape(),
+      .trim()
+      .isLength({ min: 10 })
+      .withMessage('Description must be at least 10 characters long')
+      .escape(),
 
-    body('category')
-      .isMongoId()
+  body('category')
+      .isNumeric()
       .withMessage('Invalid category ID'),
 
   body('price')
-    .isFloat({ min: 0 })
-    .withMessage('Price must be a positive number'),
+      .isFloat({ min: 0 })
+      .withMessage('Price must be a positive number'),
 
   body('numberInStock')
-    .isInt({ min: 0 })
-    .withMessage('Number in stock must be a non-negative integer'),
+      .isInt({ min: 0 })
+      .withMessage('Number in stock must be a non-negative integer'),
 
   body('brand')
-    .optional()
-    .trim()
-    .escape(),
+      .optional()
+      .trim()
+      .escape(),
 
   body('weight')
-    .optional()
-    .trim()
-    .escape(),
+      .optional()
+      .trim()
+      .escape(),
 
   body('expirationDate')
-    .optional()
-    .isISO8601()
-    .toDate(), // Convert to Date object
+      .optional()
+      .isISO8601()
+      .toDate(),
 
   body('isFeatured')
-    .optional(),
+      .optional(),
 
   body('tags')
-    .optional(),
+      .optional(),
 
   asyncHandler(async (req, res, next) => {
-    const errors = validationResult(req);
-    const item = {
-      id: req.params.id,
-      name: req.body.name,
-      description: req.body.description,
-      category: req.body.category,
-      price: req.body.price,
-      numberInStock: req.body.numberInStock,
-      brand: req.body.brand,
-      weight: req.body.weight,
-      expirationDate: req.body.expirationDate,
-      isFeatured: req.body.isFeatured,
-      tags: req.body.tags
-    }
+      const errors = validationResult(req);
 
-    if (!errors.isEmpty()){
-        res.render("item_create", {title: "Update item", category, errors: errors.array()});
-        return;
-    } else {
-        const updatedItem = await Item.findByIdAndUpdate(req.params.id, item, {})
-        res.redirect(updatedItem.url);
-    }
-  })  
-]
+      if (!errors.isEmpty()) {
+          const categoriesResult = await pool.query('SELECT * FROM categories');
+          res.render("item_create", {
+              title: "Update Item",
+              categories: categoriesResult.rows,
+              item: req.body,
+              errors: errors.array()
+          });
+          return;
+      }
+
+      if (typeof req.body.tags === 'string') {
+          req.body.tags = req.body.tags.split(',').map(tag => tag.trim());
+      } else if (typeof req.body.tags === 'undefined') {
+          req.body.tags = [];
+      }
+
+      await pool.query(
+          `UPDATE items SET name = $1, description = $2, category_id = $3, price = $4, number_in_stock = $5, brand = $6, weight = $7, expiration_date = $8, is_featured = $9, tags = $10
+          WHERE id = $11 RETURNING id`,
+          [req.body.name, req.body.description, req.body.category, req.body.price, req.body.numberInStock, req.body.brand, req.body.weight, req.body.expirationDate, req.body.isFeatured, req.body.tags, req.params.id]
+      );
+      res.redirect(`/item/${req.params.id}`);
+  })
+];

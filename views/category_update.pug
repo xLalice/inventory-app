@@ -4,7 +4,7 @@ block content
   h1 Update Category
 
   // Category update form
-  form(action=`/category/${category._id}/update`, method='POST')
+  form(action=`/category/${category.id}/update`, method='POST')
     div.form-group
       label(for='name') Name:
       input#name.form-control(type='text', name='name', value=category.name, required=true)

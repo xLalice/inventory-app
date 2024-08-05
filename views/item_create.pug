@@ -4,7 +4,7 @@ extends layout
 block content
   div.form-group
     h1 Create New Item
-    form(action='/items/create', method='POST', enctype="multipart/form-data")
+    form(action='/items/create', method='POST')
       label(for='name') Name:
       input(type='text', id='name', name='name', required)
 
@@ -15,10 +15,10 @@ block content
       select(id='category', name='category', required)
         option(value='', selected disabled) -- Select a category --
         each category in categories
-          if category._id===selectedCategory
-              option(value=category._id selected)= category.name
+          if category.id===selectedCategory
+              option(value=category.id selected)= category.name
           else
-              option(value=category._id)= category.name
+              option(value=category.id)= category.name
 
       label(for='price') Price:
       input(type='number', id='price', name='price', min='0', step='0.01', required)
@@ -40,9 +40,6 @@ block content
 
       label(for='tags') Tags:
       input(type='text', id='tags', name='tags', placeholder='Enter tags separated by commas')
-
-      label(for="image") Image: 
-      input(type="file" id="image" name="image")
 
       button(type='submit') Create
 

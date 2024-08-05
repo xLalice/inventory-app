@@ -6,6 +6,6 @@ block content
             div.item
                 h2= item.name
                 p.description= item.description
-                p.itemCategory= item.category.name
+                p.itemCategory= item.category_name
                 p.price= item.price
-                a(href=`/item/${item._id}`) View Details
+                a(href=`/item/${item.id}`) View Details

@@ -5,9 +5,9 @@ block content
     h1= category.name
     div
       button.delete-btn 
-        a(href=category.url+"/delete") Delete category 
+        a(href=`${category.url}/delete`) Delete category 
       button.update-btn
-        a(href=category.url+"/update") Update category
+        a(href=`${category.url}/update`) Update category
 
   // List items belonging to the category
   if items_under_category.length > 0
@@ -18,8 +18,8 @@ block content
           h3= item.name
           p Description: #{item.description}
           p Price: $#{item.price}
-          p Number in Stock: #{item.numberInStock}
+          p Number in Stock: #{item.number_in_stock}
           button 
-            a(href=`/item/${item._id}`) View Details
+            a(href=`/item/${item.id}`) View Details
   else
     p No items found in this category.
